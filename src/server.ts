@@ -1,6 +1,7 @@
 import express from 'express';
 import bodyParser from 'body-parser';
 import {filterImageFromURL, deleteLocalFiles} from './util/util';
+import { unlink } from 'fs';
 
 (async () => {
 
@@ -28,12 +29,24 @@ import {filterImageFromURL, deleteLocalFiles} from './util/util';
   //   the filtered image file [!!TIP res.sendFile(filteredpath); might be useful]
 
   /**************************************************************************** */
+  app.get("/filteredimage", async (req: express.Request, res: express.Response) => {
+    try {
+      const imageUrl = new URL(req.query.image_url);
+      const file = await filterImageFromURL(imageUrl.href);
+      res.on('close', () => unlink(file, console.error));
+      res.sendFile(file);
+    } catch (error) {
+      error instanceof TypeError
+      ? res.status(422).send('image url is invalid')
+      : res.status(500).send('failed to process image');
+    }
+  });
 
   //! END @TODO1
   
   // Root Endpoint
   // Displays a simple message to the user
-  app.get( "/", async ( req, res ) => {
+  app.get( "/", async (req: express.Request, res: express.Response) => {
     res.send("try GET /filteredimage?image_url={{}}")
   } );
   
